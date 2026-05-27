@@ -99,44 +99,70 @@ public class StreamApiTasks {
                 .sorted()
                 .toList();
     }
+    // Task 5:
     static double totalRevenue(List<Order> orders) {
-        // TODO: task 5
-        return 0.0;
+        return orders.stream()
+                .filter(order -> order.status() != OrderStatus.CANCELLED)
+                .mapToDouble(Order::totalValue)
+                .sum();
     }
-
+    // Task 6:
     static OptionalDouble averageDeliveredOrderValue(List<Order> orders) {
-        // TODO: task 6
-        return OptionalDouble.empty();
+        return orders.stream()
+                .filter(order -> order.status() == OrderStatus.DELIVERED)
+                .mapToDouble(Order::totalValue)
+                .average();
     }
-
+    // Task 7:
     static Map<OrderStatus, Long> countByStatus(List<Order> orders) {
-        // TODO: task 7
-        return Map.of();
+        return orders.stream()
+                .collect(Collectors.groupingBy(Order::status, Collectors.counting()));
     }
-
+    // Task 8:
     static Map<String, Double> revenueByCategory(List<Order> orders) {
-        // TODO: task 8
-        return Map.of();
+        return orders.stream()
+                .filter(order -> order.status() != OrderStatus.CANCELLED)
+                .flatMap(order -> order.items().stream())
+                .collect(Collectors.groupingBy(
+                        item -> item.product().category(),
+                        Collectors.summingDouble(OrderItem::totalPrice)
+                ));
     }
-
+    // Task 9:
     static Map<String, Double> topCustomers(List<Order> orders, int limit) {
-        // TODO: task 9
-        return Map.of();
+        return orders.stream()
+                .filter(order -> order.status() != OrderStatus.CANCELLED)
+                .collect(Collectors.groupingBy(
+                        Order::customerName,
+                        Collectors.summingDouble(Order::totalValue)
+                ))
+                .entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(limit)
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (e1, e2) -> e1,
+                        LinkedHashMap::new
+                ));
     }
-
+    // Task 10: Partition Expensive And Other Orders
     static Map<Boolean, List<Order>> partitionActiveOrdersByValue(List<Order> orders, double threshold) {
-        // TODO: task 10
-        return Map.of();
+        return orders.stream()
+                .filter(order -> order.status() != OrderStatus.CANCELLED)
+                .collect(Collectors.partitioningBy(order -> order.totalValue() >= threshold));
     }
-
+    // Task 11: Most Expensive Delivered Order
     static Optional<Order> mostExpensiveDeliveredOrder(List<Order> orders) {
-        // TODO: task 11
-        return Optional.empty();
+        return orders.stream()
+                .filter(order -> order.status() == OrderStatus.DELIVERED)
+                .max(Comparator.comparingDouble(Order::totalValue));
     }
-
+    // Extra Task. Active Order Statistics
     static DoubleSummaryStatistics activeOrderStatistics(List<Order> orders) {
-        // TODO: extra task
-        return new DoubleSummaryStatistics();
+        return orders.stream()
+                .filter(order -> order.status() != OrderStatus.CANCELLED)
+                .collect(Collectors.summarizingDouble(Order::totalValue));
     }
     public static void main(String[] args) {
         List<Order> orders = sampleOrders();
@@ -144,6 +170,13 @@ public class StreamApiTasks {
         System.out.println("Task 2: " + ordersAbove(orders, 3000).stream().map(Order::id).toList());
         System.out.println("Task 3: " + uniqueCustomerNames(orders));
         System.out.println("Task 4: " + soldProductNames(orders));
-
+        System.out.println("Task 5: " + totalRevenue(orders));
+        System.out.println("Task 6: " + averageDeliveredOrderValue(orders).orElse(0.0));
+        System.out.println("Task 7: " + countByStatus(orders));
+        System.out.println("Task 8: " + revenueByCategory(orders));
+        System.out.println("Task 9: " + topCustomers(orders, 3));
+        System.out.println("Task 10: " + partitionActiveOrdersByValue(orders, 3000));
+        System.out.println("Task 11: " + mostExpensiveDeliveredOrder(orders).map(Order::id).orElse("none"));
+        System.out.println("Extra Task: " + activeOrderStatistics(orders));
     }
 }
